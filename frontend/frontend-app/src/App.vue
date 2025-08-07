@@ -1,24 +1,40 @@
 <template>
-  <div class="container">
-    <h1>Menadżer haseł 🔐</h1>
+  <div>
+    <h1>Menadżer Haseł</h1>
 
     <form @submit.prevent="addPassword">
-      <input v-model="form.service" placeholder="Serwis" required />
-      <input v-model="form.login" placeholder="Login" required />
-      <input v-model="form.password" placeholder="Hasło" required />
-      <button type="submit">Zapisz</button>
+      <input
+        type="text"
+        v-model="newPassword.service"
+        placeholder="Serwis"
+        required
+      />
+      <input
+        type="text"
+        v-model="newPassword.login"
+        placeholder="Login"
+        required
+      />
+      <input
+        type="password"
+        v-model="newPassword.password"
+        placeholder="Hasło"
+        required
+      />
+      <button type="submit">Dodaj</button>
     </form>
 
-    <hr />
-
-    <h2>Zapisane hasła:</h2>
     <ul>
-      <li v-for="item in passwords" :key="item.id">
-        <strong>{{ item.service }}</strong> – {{ item.login }} – {{ item.password }}
+      <li v-for="password in passwords" :key="password.id">
+        <strong>{{ password.service }}</strong> — {{ password.login }}
+        <button @click="deletePassword(password.id)">Usuń</button>
       </li>
     </ul>
   </div>
 </template>
+
+
+
 
 <script>
 import axios from 'axios'
@@ -26,23 +42,29 @@ import axios from 'axios'
 export default {
   data() {
     return {
-      form: {
+      passwords: [],
+      newPassword: {
         service: '',
         login: '',
         password: ''
-      },
-      passwords: []
+      }
     }
   },
   methods: {
+   async fetchPasswords() {
+  const response = await axios.get('http://127.0.0.1:8000/passwords')
+  console.log('Dane z backendu:', response.data) // DEBUG
+  this.passwords = response.data
+}
+,
     async addPassword() {
-      await axios.post('http://127.0.0.1:8000/passwords', this.form)
-      this.form = { service: '', login: '', password: '' }
+      await axios.post('http://127.0.0.1:8000/passwords', this.newPassword)
+      this.newPassword = { service: '', login: '', password: '' }
       this.fetchPasswords()
     },
-    async fetchPasswords() {
-      const response = await axios.get('http://127.0.0.1:8000/passwords')
-      this.passwords = response.data
+    async deletePassword(id) {
+      await axios.delete(`http://127.0.0.1:8000/passwords/${id}`)
+      this.fetchPasswords()
     }
   },
   mounted() {
@@ -51,20 +73,74 @@ export default {
 }
 </script>
 
+
 <style>
-.container {
-  max-width: 500px;
-  margin: auto;
-  font-family: sans-serif;
+body {
+  background-color: #f2f2f2; /* lekko szare tło */
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
 }
+
+h1 {
+  color: #333333; /* ciemny szary */
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 400px;
+  margin: 0 auto 30px auto;
+}
+
 input {
-  display: block;
-  margin: 5px 0;
-  padding: 6px;
-  width: 100%;
+  padding: 10px;
+  font-size: 16px;
 }
+
 button {
-  margin-top: 10px;
-  padding: 8px 12px;
+  padding: 10px;
+  font-size: 16px;
+  background-color: #007BFF; /* niebieski */
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #0056b3; /* ciemniejszy niebieski przy najechaniu */
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+li {
+  background-color: white;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+li strong {
+  color: #333333;
+}
+
+li button {
+  background-color: #dc3545; /* czerwony dla "Usuń" */
+}
+
+li button:hover {
+  background-color: #a71d2a;
 }
 </style>
