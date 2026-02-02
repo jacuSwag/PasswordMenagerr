@@ -1,6 +1,9 @@
 fastapi
-uvicorn
+uvicorn[standard]
 sqlalchemy
 pydantic
 cryptography
 python-dotenv
+PyJWT
+bcrypt
+python-multipart

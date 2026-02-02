@@ -1,146 +1,118 @@
 <template>
-  <div>
+  <div class="app-container">
     <h1>Menadżer Haseł</h1>
 
-    <form @submit.prevent="addPassword">
-      <input
-        type="text"
-        v-model="newPassword.service"
-        placeholder="Serwis"
-        required
-      />
-      <input
-        type="text"
-        v-model="newPassword.login"
-        placeholder="Login"
-        required
-      />
-      <input
-        type="password"
-        v-model="newPassword.password"
-        placeholder="Hasło"
-        required
-      />
-      <button type="submit">Dodaj</button>
-    </form>
+    <!-- 🔑 Pole do wpisania klucza -->
+    <div class="key-section">
+      <input v-model="decryptKey" type="text" placeholder="Wpisz klucz do odszyfrowania" />
+      <button @click="fetchPasswords">Załaduj hasła</button>
+    </div>
 
+    <!-- Formularz dodawania -->
+    <div class="form-section">
+      <input v-model="newPassword.service" type="text" placeholder="Serwis" />
+      <input v-model="newPassword.login" type="text" placeholder="Login" />
+      <input v-model="newPassword.password" type="password" placeholder="Hasło" />
+      <button @click="addPassword">Dodaj</button>
+    </div>
+
+    <!-- Lista haseł -->
     <ul>
-      <li v-for="password in passwords" :key="password.id">
-        <strong>{{ password.service }}</strong> — {{ password.login }}
-        <button @click="deletePassword(password.id)">Usuń</button>
+      <li v-for="item in passwords" :key="item.id">
+        <strong>{{ item.service }}</strong> – {{ item.login }} – 
+        <span>{{ decrypted[item.id] || item.password }}</span>
+
+        <button @click="decryptPassword(item.id, item.password)">Odszyfruj</button>
+        <button @click="deletePassword(item.id)">Usuń</button>
       </li>
     </ul>
   </div>
 </template>
 
-
-
-
 <script>
-import axios from 'axios'
+import axios from "axios";
 
 export default {
   data() {
     return {
       passwords: [],
-      newPassword: {
-        service: '',
-        login: '',
-        password: ''
-      }
-    }
+      decrypted: {}, // przechowuje odszyfrowane hasła
+      decryptKey: "", // wpisany przez użytkownika klucz
+      newPassword: { service: "", login: "", password: "" },
+    };
   },
   methods: {
-   async fetchPasswords() {
-  const response = await axios.get('http://127.0.0.1:8000/passwords')
-  console.log('Dane z backendu:', response.data) // DEBUG
-  this.passwords = response.data
-}
-,
+    async fetchPasswords() {
+      const res = await axios.get("http://127.0.0.1:8000/passwords");
+      this.passwords = res.data;
+    },
     async addPassword() {
-      await axios.post('http://127.0.0.1:8000/passwords', this.newPassword)
-      this.newPassword = { service: '', login: '', password: '' }
-      this.fetchPasswords()
+      await axios.post("http://127.0.0.1:8000/passwords", this.newPassword);
+      this.newPassword = { service: "", login: "", password: "" };
+      this.fetchPasswords();
     },
     async deletePassword(id) {
-      await axios.delete(`http://127.0.0.1:8000/passwords/${id}`)
-      this.fetchPasswords()
-    }
+      await axios.delete(`http://127.0.0.1:8000/passwords/${id}`);
+      this.fetchPasswords();
+    },
+    async decryptPassword(id, encrypted) {
+      if (!this.decryptKey) {
+        alert("Podaj klucz do odszyfrowania!");
+        return;
+      }
+      try {
+        const res = await axios.post("http://127.0.0.1:8000/decrypt", {
+          key: this.decryptKey.trim(),
+          password: encrypted,
+        });
+        this.$set(this.decrypted, id, res.data.decrypted);
+      } catch (err) {
+        alert("Błędny klucz lub problem z odszyfrowaniem");
+      }
+    },
   },
   mounted() {
-    this.fetchPasswords()
-  }
-}
+    this.fetchPasswords();
+  },
+};
 </script>
 
-
 <style>
+/* 🔥 Dark mode */
 body {
-  background-color: #f2f2f2; /* lekko szare tło */
+  background-color: #121212;
+  color: #f5f5f5;
   font-family: Arial, sans-serif;
-  margin: 0;
+}
+
+.app-container {
+  max-width: 700px;
+  margin: 30px auto;
   padding: 20px;
+  background: #1e1e1e;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.5);
 }
 
-h1 {
-  color: #333333; /* ciemny szary */
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-width: 400px;
-  margin: 0 auto 30px auto;
+input, button {
+  margin: 5px;
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
 }
 
 input {
-  padding: 10px;
-  font-size: 16px;
+  background: #2c2c2c;
+  color: #fff;
 }
 
 button {
-  padding: 10px;
-  font-size: 16px;
-  background-color: #007BFF; /* niebieski */
+  background: #444;
   color: white;
-  border: none;
   cursor: pointer;
-  transition: background-color 0.3s;
 }
 
 button:hover {
-  background-color: #0056b3; /* ciemniejszy niebieski przy najechaniu */
-}
-
-ul {
-  list-style: none;
-  padding: 0;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-li {
-  background-color: white;
-  padding: 15px;
-  margin-bottom: 10px;
-  border-radius: 5px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-li strong {
-  color: #333333;
-}
-
-li button {
-  background-color: #dc3545; /* czerwony dla "Usuń" */
-}
-
-li button:hover {
-  background-color: #a71d2a;
+  background: #666;
 }
 </style>
