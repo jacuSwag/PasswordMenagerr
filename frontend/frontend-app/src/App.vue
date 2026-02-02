@@ -57,7 +57,8 @@
 <script>
 import axios from "axios";
 
-const API_URL = "http://127.0.0.1:8000";
+// Backend na tym samym hoście
+const API_URL = window.location.origin;
 
 export default {
   data() {
@@ -229,6 +230,7 @@ input, button {
 input {
   background: #f9f9f9;
   border: 1px solid #e0e0e0;
+  color: #000;
 }
 
 input:focus {
